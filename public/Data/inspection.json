@@ -5,7 +5,8 @@
     { "id": "inspectionId", "question": "What is the inspection ID?" },
     { "id": "inspectorName", "question": "Who is the inspector?" },
     { "id": "inspectionEmployeeId", "question": "What is the inspection employee ID?" },
-    { "id": "dateTimeOfInspection", "question": "What is the date and time of inspection?" },
+    { "id": "dateOfInspection", "question": "What is the date of inspection?" },
+    { "id": "timeOfInspection", "question": "What is the time of inspection?" },
     { "id": "locationOfInspection", "question": "Where is the location of the inspection?" },
     { "id": "geoCoordinates", "question": "What are the geo coordinates of the inspection?" },
     { "id": "serviceMeterHours", "question": "What are the service meter hours?" },
@@ -54,7 +55,7 @@
     { "id": "oilLeakInEngine", "question": "Is there any oil leak in the engine?" },
     { "id": "overallEngineSummary", "question": "What is the overall engine summary?" }
   ],
-  "voiceOfCustomer": [
+  "voice Of Customer": [
     { "id": "customerFeedback", "question": "What feedback did the customer provide?" },
     { "id": "imagesRelatedToCustomerIssues", "question": "What images are related to the issues discussed with the customer?" }
   ]
