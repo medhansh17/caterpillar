@@ -2,27 +2,26 @@ import React, { useState, useEffect, useCallback } from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
+import inspect_ques from "../Data/inspection.json";
 
-const inspectionSteps = [
-  { id: "tire", question: "How is the condition of the tires?" },
-  { id: "engine", question: "How is the condition of the engine?" },
-  // Add more inspection steps as needed
-];
-
-const DEBOUNCE_TIME = 2000; // Increased to 2 seconds for better user experience
+const DEBOUNCE_TIME = 500;
 
 const InspectionForm = () => {
   const [responses, setResponses] = useState({});
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const { transcript, resetTranscript } = useSpeechRecognition();
   const [isListening, setIsListening] = useState(false);
 
   const startInspection = useCallback(() => {
     resetTranscript();
     setCurrentStepIndex(0);
+    setCurrentSectionIndex(0);
     setIsListening(true);
     SpeechRecognition.startListening({ continuous: true });
-    speakQuestion(inspectionSteps[0].question);
+    const firstQuestion =
+      Object.values(inspect_ques)[0]?.[0]?.question || "No questions available";
+    speakQuestion(firstQuestion);
   }, [resetTranscript]);
 
   const speakQuestion = (question) => {
@@ -31,27 +30,45 @@ const InspectionForm = () => {
   };
 
   const handleSpeechRecognition = useCallback(() => {
-    if (transcript.toLowerCase().includes("okay done")) {
+    if (
+      transcript.toLowerCase().includes("okay next") ||
+      transcript.toLowerCase().includes("ok next")
+    ) {
       moveToNextStep();
     } else if (currentStepIndex !== -1) {
-      setResponses((prevResponses) => ({
-        ...prevResponses,
-        [inspectionSteps[currentStepIndex].id]: transcript,
-      }));
+      const sections = Object.values(inspect_ques);
+      const currentSection = sections[currentSectionIndex];
+      if (currentSection && currentSection[currentStepIndex]) {
+        const currentStep = currentSection[currentStepIndex];
+        setResponses((prevResponses) => ({
+          ...prevResponses,
+          [currentStep.id]: transcript,
+        }));
+      }
     }
-  }, [transcript, currentStepIndex]);
+  }, [transcript, currentStepIndex, currentSectionIndex]);
 
   const moveToNextStep = useCallback(() => {
     resetTranscript();
-    if (currentStepIndex < inspectionSteps.length - 1) {
+    const sections = Object.values(inspect_ques);
+    const currentSection = sections[currentSectionIndex];
+
+    if (currentStepIndex < currentSection.length - 1) {
       setCurrentStepIndex((prevIndex) => prevIndex + 1);
-      speakQuestion(inspectionSteps[currentStepIndex + 1].question);
+      speakQuestion(
+        currentSection[currentStepIndex + 1]?.question || "No more questions"
+      );
+    } else if (currentSectionIndex < sections.length - 1) {
+      setCurrentSectionIndex((prevIndex) => prevIndex + 1);
+      setCurrentStepIndex(0);
+      const nextSection = sections[currentSectionIndex + 1];
+      speakQuestion(nextSection[0]?.question || "No more questions");
     } else {
       SpeechRecognition.stopListening();
       setIsListening(false);
       alert("Inspection completed");
     }
-  }, [currentStepIndex, resetTranscript]);
+  }, [currentStepIndex, currentSectionIndex, resetTranscript]);
 
   useEffect(() => {
     if (isListening && transcript) {
@@ -80,21 +97,34 @@ const InspectionForm = () => {
         Start Inspection
       </button>
       <div className="space-y-6">
-        {inspectionSteps.map((step, index) => (
-          <div key={step.id} className="bg-gray-100 p-4 rounded-lg">
-            <h2 className="text-xl font-semibold mb-2">{step.question}</h2>
-            <input
-              type="text"
-              value={responses[step.id] || ""}
-              onChange={(e) => handleInputChange(e, step.id)}
-              placeholder="Waiting for response..."
-              className="w-full p-2 border border-gray-300 rounded text-lg"
-            />
-            {index === currentStepIndex && isListening && (
-              <p className="text-sm text-gray-600 mt-2">Listening...</p>
-            )}
-          </div>
-        ))}
+        {Object.entries(inspect_ques).map(
+          ([sectionKey, sectionQuestions], sectionIndex) => (
+            <div key={sectionKey} className="my-6">
+              <h1 className="text-2xl font-bold mb-4">
+                {sectionKey.toUpperCase()}
+              </h1>
+              {sectionQuestions.map((step, index) => (
+                <div key={step.id} className="bg-gray-100 p-4 rounded-lg mb-4">
+                  <h2 className="text-xl font-semibold mb-2">
+                    {step.question}
+                  </h2>
+                  <input
+                    type="text"
+                    value={responses[step.id] || ""}
+                    onChange={(e) => handleInputChange(e, step.id)}
+                    placeholder="Waiting for response..."
+                    className="w-full p-2 border border-gray-300 rounded text-lg"
+                  />
+                  {sectionIndex === currentSectionIndex &&
+                    index === currentStepIndex &&
+                    isListening && (
+                      <p className="text-sm text-gray-600 mt-2">Listening...</p>
+                    )}
+                </div>
+              ))}
+            </div>
+          )
+        )}
       </div>
     </div>
   );
