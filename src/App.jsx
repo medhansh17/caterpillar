@@ -1,11 +1,5 @@
-import "./App.css";
+import InspectionForm from "./components/InspectionForm";
 
-function App() {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold underline">Hello world!</h1>
-    </div>
-  );
+export default function App() {
+  return <InspectionForm />;
 }
-
-export default App;
