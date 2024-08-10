@@ -10,7 +10,7 @@ export default function App() {
     <>
       <Routes>
         <Route element={<PrivateRoutes />}>
-          <Route path="/" element={<InspectionForm />} />
+          <Route path="/inspectForm" element={<InspectionForm />} />
           <Route path="/inspection" element={<Inspect />} />
         </Route>
         <Route path="/login" element={<LogIn />} />

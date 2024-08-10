@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/library";
 import CameraModal from "./CameraModal"; // Adjust the path as needed
+import { useNavigate } from "react-router-dom";
 
 const ImageBarcodeScanner = () => {
+  const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState(null);
   const [data, setData] = useState("No result");
   const [error, setError] = useState(null);
@@ -44,10 +46,7 @@ const ImageBarcodeScanner = () => {
   };
 
   const handleContinue = () => {
-    // Add logic to handle the form submission or next steps
-    console.log("Serial Number:", serialNumber);
-    console.log("Model ID:", modelId);
-    console.log("Scanned Data:", data);
+    navigate(`/inspectForm?serialno=${serialNumber}&modelno=${modelId}`);
   };
 
   return (

@@ -2,12 +2,17 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
-import inspect_ques from "../../public/Data/D6R2.json";
+// import inspectQues from "../Data/D6R2.json";
 import CameraModal from "./CameraModal";
 import { savePhoto, getAllPhotos } from "./indexedDB";
 import SignatureCanvas from "./SignatureCanvas";
 import InspectionPDF from "./InspectionPDF";
 import { PDFDownloadLink } from "@react-pdf/renderer";
+import { useLocation } from "react-router-dom";
+import R2900 from "../Data/R2900.json";
+import D6R2 from "../Data/D6R2.json";
+import MD6200 from "../Data/MD6200.json";
+import GC from "../Data/120GC.json";
 
 const DEBOUNCE_TIME = 100;
 
@@ -47,7 +52,18 @@ const generateSpecialInput = async (id) => {
   }
 };
 
+const modelToJsonMap = {
+  R2900: R2900,
+  D6R2: D6R2,
+  MD6200: MD6200,
+  GC: GC,
+};
+
 const InspectionForm = () => {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const serialNo = params.get("serialno") || "";
+  const modelNo = params.get("modelno") || "";
   const [responses, setResponses] = useState({});
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
@@ -60,16 +76,20 @@ const InspectionForm = () => {
   const [currentPhotoStep, setCurrentPhotoStep] = useState(null);
   const [showSignatureCanvas, setShowSignatureCanvas] = useState(false);
   const [images, setImages] = useState({});
+  const [inspectQues, setInspectQues] = useState({});
+  const [attachPictures, setAttachPictures] = useState(false);
+  const [isAskingForPictures, setIsAskingForPictures] = useState(false);
 
   useEffect(() => {
-    getAllPhotos().then((storedPhotos) => {
-      const photoObject = storedPhotos.reduce((acc, photo) => {
-        acc[photo.id] = photo.photoDataUrl;
-        return acc;
-      }, {});
-      setPhotos(photoObject);
-    });
-  }, []);
+    if (modelToJsonMap[modelNo]) {
+      const selectedJson = modelToJsonMap[modelNo];
+      setInspectQues(selectedJson);
+    } else {
+      const selectedJson = {};
+      setInspectQues(selectedJson);
+      alert("Model not found");
+    }
+  }, [modelNo]);
 
   const handleClickPhoto = (stepId) => {
     setCurrentPhotoStep(stepId);
@@ -88,18 +108,57 @@ const InspectionForm = () => {
     setCurrentSectionIndex(0);
     setIsListening(true);
     SpeechRecognition.startListening({ continuous: true });
-    const firstQuestion =
-      Object.values(inspect_ques)[0]?.[0]?.question || "No questions available";
-    speakQuestion(firstQuestion);
-    setExpandedSections({ [Object.keys(inspect_ques)[0]]: true });
-  }, [resetTranscript]);
+    const firstSection = Object.values(inspectQues)[0];
+    if (firstSection && firstSection.length > 0) {
+      const firstNonSpecialIndex = findNextNonSpecialStep(firstSection, 0);
+      if (firstNonSpecialIndex !== -1) {
+        const firstQuestion = firstSection[firstNonSpecialIndex].question;
+        speakQuestion(firstQuestion);
+      } else {
+        speakQuestion("No questions available in this section");
+      }
+    } else {
+      speakQuestion("No questions available");
+    }
+    setExpandedSections({ [Object.keys(inspectQues)[0]]: true });
+  }, [resetTranscript, inspectQues]);
 
   const speakQuestion = (question) => {
     const speech = new SpeechSynthesisUtterance(question);
     speechSynthesis.speak(speech);
   };
 
+  const moveToNextSection = () => {
+    if (currentSectionIndex < Object.values(inspectQues).length - 1) {
+      setCurrentSectionIndex((prevIndex) => prevIndex + 1);
+      const nextSection = Object.values(inspectQues)[currentSectionIndex + 1];
+      const nextSectionFirstNonSpecialIndex = findNextNonSpecialStep(
+        nextSection,
+        0
+      );
+      setCurrentStepIndex(nextSectionFirstNonSpecialIndex);
+      if (nextSectionFirstNonSpecialIndex !== -1) {
+        const nextStep = nextSection[nextSectionFirstNonSpecialIndex];
+        speakQuestion(nextStep.question);
+      }
+      const nextSectionKey = Object.keys(inspectQues)[currentSectionIndex + 1];
+      setExpandedSections((prev) => ({
+        ...prev,
+        [nextSectionKey]: true,
+      }));
+      setAttachPictures(false);
+      setIsAskingForPictures(false);
+    } else {
+      SpeechRecognition.stopListening();
+      setIsListening(false);
+      alert("Inspection completed");
+    }
+  };
+
   const handleSpeechRecognition = useCallback(async () => {
+    if (attachPictures && transcript.toLowerCase().includes("ok done")) {
+      moveToNextSection();
+    }
     if (transcript.toLowerCase().includes("reset")) {
       resetTranscript();
     }
@@ -109,7 +168,7 @@ const InspectionForm = () => {
     ) {
       moveToNextStep();
     } else if (currentStepIndex !== -1) {
-      const sections = Object.values(inspect_ques);
+      const sections = Object.values(inspectQues);
       const currentSection = sections[currentSectionIndex];
       if (currentSection && currentSection[currentStepIndex]) {
         const currentStep = currentSection[currentStepIndex];
@@ -140,6 +199,7 @@ const InspectionForm = () => {
         section[i].id !== "timeOfInspection" &&
         section[i].id !== "geoCoordinates" &&
         section[i].id !== "inspectorSignature"
+        // (attachPictures || section[i].type !== "photo")
       ) {
         return i;
       }
@@ -149,65 +209,83 @@ const InspectionForm = () => {
 
   const moveToNextStep = useCallback(async () => {
     resetTranscript();
-    const sections = Object.values(inspect_ques);
+    const sections = Object.values(inspectQues);
     const currentSection = sections[currentSectionIndex];
 
-    const nextStepIndex = findNextNonSpecialStep(
+    if (!currentSection) {
+      moveToNextSection();
+      return;
+    }
+
+    let nextStepIndex = findNextNonSpecialStep(
       currentSection,
       currentStepIndex + 1
     );
 
-    if (nextStepIndex !== -1) {
-      setCurrentStepIndex(nextStepIndex);
-      const nextStep = currentSection[nextStepIndex];
-      if (
-        ["dateOfInspection", "timeOfInspection", "geoCoordinates"].includes(
-          nextStep.id
-        )
-      ) {
-        const specialInput = await generateSpecialInput(nextStep.id);
-        setResponses((prevResponses) => ({
-          ...prevResponses,
-          [nextStep.id]: specialInput,
-        }));
-      } else {
-        speakQuestion(nextStep.question);
-      }
-    } else if (currentSectionIndex < sections.length - 1) {
-      setCurrentSectionIndex((prevIndex) => prevIndex + 1);
-      const nextSection = sections[currentSectionIndex + 1];
-      const nextSectionFirstNonSpecialIndex = findNextNonSpecialStep(
-        nextSection,
-        0
-      );
-      setCurrentStepIndex(nextSectionFirstNonSpecialIndex);
-      if (nextSectionFirstNonSpecialIndex !== -1) {
-        const nextStep = nextSection[nextSectionFirstNonSpecialIndex];
-        if (
-          ["dateOfInspection", "timeOfInspection", "geoCoordinates"].includes(
-            nextStep.id
-          )
-        ) {
-          const specialInput = await generateSpecialInput(nextStep.id);
-          setResponses((prevResponses) => ({
-            ...prevResponses,
-            [nextStep.id]: specialInput,
-          }));
-        } else {
-          speakQuestion(nextStep.question);
-        }
-      }
-      const nextSectionKey = Object.keys(inspect_ques)[currentSectionIndex + 1];
-      setExpandedSections((prev) => ({
-        ...prev,
-        [nextSectionKey]: true,
-      }));
-    } else {
-      SpeechRecognition.stopListening();
-      setIsListening(false);
-      alert("Inspection completed");
+    if (nextStepIndex === -1) {
+      moveToNextSection();
+      return;
     }
-  }, [currentStepIndex, currentSectionIndex, resetTranscript]);
+
+    let nextStep = currentSection[nextStepIndex];
+
+    while (nextStep && nextStep.type === "photo") {
+      if (!isAskingForPictures) {
+        setIsAskingForPictures(true);
+        speakQuestion("Do you want to attach pictures for this section?");
+        return;
+      }
+
+      if (!attachPictures) {
+        nextStepIndex = findNextNonSpecialStep(
+          currentSection,
+          nextStepIndex + 1
+        );
+        if (nextStepIndex === -1) {
+          moveToNextSection();
+          return;
+        }
+        nextStep = currentSection[nextStepIndex];
+      } else {
+        break;
+      }
+    }
+
+    if (nextStep && nextStep.type === "photo" && attachPictures) {
+      // Prompt to attach photos if required
+      speakQuestion(
+        "Please attach the required photos. Say 'OK done' when you have finished."
+      );
+      setIsAskingForPictures(true);
+      return;
+    }
+
+    setCurrentStepIndex(nextStepIndex);
+
+    if (
+      ["dateOfInspection", "timeOfInspection", "geoCoordinates"].includes(
+        nextStep.id
+      )
+    ) {
+      const specialInput = await generateSpecialInput(nextStep.id);
+      setResponses((prevResponses) => ({
+        ...prevResponses,
+        [nextStep.id]: specialInput,
+      }));
+      moveToNextStep();
+    } else {
+      speakQuestion(nextStep.question);
+    }
+  }, [
+    currentStepIndex,
+    currentSectionIndex,
+    resetTranscript,
+    isAskingForPictures,
+    attachPictures,
+    inspectQues,
+  ]);
+
+  
 
   useEffect(() => {
     if (isListening && transcript) {
@@ -221,7 +299,7 @@ const InspectionForm = () => {
 
   useEffect(() => {
     if (currentStepIndex !== -1 && currentSectionIndex !== -1) {
-      const sections = Object.keys(inspect_ques);
+      const sections = Object.keys(inspectQues);
       const currentSectionKey = sections[currentSectionIndex];
       const currentQuestionId = `${currentSectionKey}-${currentStepIndex}`;
       const questionElement = questionRefs.current[currentQuestionId];
@@ -233,7 +311,7 @@ const InspectionForm = () => {
 
   useEffect(() => {
     const updateSpecialInputs = async () => {
-      const sections = Object.values(inspect_ques);
+      const sections = Object.values(inspectQues);
       for (const section of sections) {
         for (const step of section) {
           const specialInput = await generateSpecialInput(step.id);
@@ -263,7 +341,19 @@ const InspectionForm = () => {
       [sectionKey]: !prev[sectionKey],
     }));
   };
+  useEffect(() => {
+    if (attachPictures) {
+      const currentSection = Object.values(inspectQues)[currentSectionIndex];
+      const photoQuestions = currentSection.filter((q) => q.type === "photo");
+      const allPhotosTaken = photoQuestions.every((q) => photos[q.id]);
 
+      if (allPhotosTaken) {
+        speakQuestion(
+          "All photos for this section have been taken. Say 'OK done' to move to the next section."
+        );
+      }
+    }
+  }, [photos, attachPictures, currentSectionIndex, inspectQues]);
   const handleSaveSignature = (dataUrl) => {
     setResponses((prevResponses) => ({
       ...prevResponses,
@@ -282,7 +372,7 @@ const InspectionForm = () => {
         Start Inspection
       </button>
       <div className="space-y-6">
-        {Object.entries(inspect_ques).map(
+        {Object.entries(inspectQues).map(
           ([sectionKey, sectionQuestions], sectionIndex) => (
             <div
               key={sectionKey}
@@ -369,7 +459,7 @@ const InspectionForm = () => {
                               <img
                                 src={photos[step.id]}
                                 alt={`Photo for ${step.question}`}
-                                className="mt-2 max-w-full h-auto"
+                                className="mt-2 max-w-[200px] h-auto"
                               />
                             )}
                           </>

@@ -1,0 +1,207 @@
+{
+  "header": [
+    {
+      "id": "SerialNumber",
+      "question": "What is the truck serial number?"
+    },
+    { "id": "truckModel", "question": "What is the  model id?" },
+    { "id": "inspectionId", "question": "What is the inspection ID?" },
+    { "id": "inspectorName", "question": "Who is the inspector?" },
+    {
+      "id": "inspectionEmployeeId",
+      "question": "What is the inspection employee ID?"
+    },
+    { "id": "dateOfInspection", "question": "What is the date of inspection?" },
+    { "id": "timeOfInspection", "question": "What is the time of inspection?" },
+    {
+      "id": "locationOfInspection",
+      "question": "Where is the location of the inspection?"
+    },
+    {
+      "id": "geoCoordinates",
+      "question": "What are the geo coordinates of the inspection?"
+    },
+    {
+      "id": "serviceMeterHours",
+      "question": "What are the service meter hours?"
+    },
+    {
+      "id": "inspectorSignature",
+      "question": "Insert inspector's signature?"
+    },
+    {
+      "id": "customerName",
+      "question": "What is the customer or company name?"
+    },
+    { "id": "catCustomerId", "question": "What is the CAT customer ID?" }
+  ],
+  "Tracks": [
+    {
+      "id": "trackTensionLeftSide",
+      "question": "What is the track tension for the left side?"
+    },
+    {
+      "id": "trackTensionRightSide",
+      "question": "What is the track tension for the right side?"
+    },
+    {
+      "id": "trackConditionLeftSide",
+      "question": "What is the track condition for the left side? (Good, OK, Needs Replacement)"
+    },
+    {
+      "id": "trackConditionRightSide",
+      "question": "What is the track condition for the right side? (Good, OK, Needs Replacement)"
+    },
+    {
+      "id": "overallTrackSummary",
+      "question": "What is the overall track summary? (<1000 characters)"
+    },
+    {
+      "id": "photoLeftSide",
+      "question": "Insert Left Side Track Image:",
+      "type": "photo"
+    },
+    {
+      "id": "photoRightSide",
+      "question": "Insert Right Side Track Image:",
+      "type": "photo"
+    }
+  ],
+
+  "DrillAttachment": [
+    {
+      "id": "drillBitCondition",
+      "question": "What is the drill bit condition? (Good, OK, Needs Replacement)"
+    },
+    {
+      "id": "attachmentStability",
+      "question": "What is the attachment stability? (Secure, Slightly Loose, Needs Adjustment)"
+    },
+    {
+      "id": "attachmentWear",
+      "question": "What is the attachment wear? (Minimal, Moderate, Significant)"
+    },
+    {
+      "id": "overallDrillAttachmentSummary",
+      "question": "What is the overall drill attachment summary? (<1000 characters)"
+    },
+    {
+      "id": "photoDrillAttachment",
+      "question": "Insert Drill Attachment Image:",
+      "type": "photo"
+    }
+  ],
+
+  "battery": [
+    { "id": "batteryMake", "question": "What is the battery make?" },
+    {
+      "id": "batteryReplacementDate",
+      "question": "What is the battery replacement date?"
+    },
+    { "id": "batteryVoltage", "question": "What is the battery voltage?" },
+    {
+      "id": "batteryWaterLevel",
+      "question": "What is the battery water level?"
+    },
+    {
+      "id": "conditionOfBattery",
+      "question": "Is there any damage to the battery?"
+    },
+    {
+      "id": "leakOrRustInBattery",
+      "question": "Is there any leak or rust in the battery?"
+    },
+    {
+      "id": "batteryOverallSummary",
+      "question": "What is the battery overall summary?"
+    },
+    {
+      "id": "photoBattery",
+      "question": "Insert Battery Image :",
+      "type": "photo"
+    }
+  ],
+  "exterior": [
+    {
+      "id": "rustDentDamageExterior",
+      "question": "Is there any rust, dent, or damage to the exterior?"
+    },
+    {
+      "id": "oilLeakInSuspension",
+      "question": "Is there an oil leak in the suspension?"
+    },
+    {
+      "id": "overallSummaryExterior",
+      "question": "What is the overall summary for the exterior?"
+    },
+    {
+      "id": "photoExterior",
+      "question": "Insert Exterior Image :",
+      "type": "photo"
+    }
+  ],
+  "brakes": [
+    { "id": "brakeFluidLevel", "question": "What is the brake fluid level?" },
+    {
+      "id": "brakeConditionFront",
+      "question": "What is the brake condition for the front?"
+    },
+    {
+      "id": "brakeConditionRear",
+      "question": "What is the brake condition for the rear?"
+    },
+    {
+      "id": "emergencyBrake",
+      "question": "What is the condition of the emergency brake?"
+    },
+    {
+      "id": "brakeOverallSummary",
+      "question": "What is the overall brake summary?"
+    },
+    {
+      "id": "photoBrakes",
+      "question": "Insert Brakes Image :",
+      "type": "photo"
+    }
+  ],
+  "engine": [
+    {
+      "id": "rustDentsDamageEngine",
+      "question": "Is there any rust, dent, or damage to the engine?"
+    },
+    {
+      "id": "engineOilCondition",
+      "question": "What is the engine oil condition?"
+    },
+    { "id": "engineOilColor", "question": "What is the engine oil color?" },
+    {
+      "id": "brakeFluidCondition",
+      "question": "What is the brake fluid condition?"
+    },
+    { "id": "brakeFluidColor", "question": "What is the brake fluid color?" },
+    {
+      "id": "oilLeakInEngine",
+      "question": "Is there any oil leak in the engine?"
+    },
+    {
+      "id": "overallEngineSummary",
+      "question": "What is the overall engine summary?"
+    },
+    {
+      "id": "photoEngine",
+      "question": "Insert  Engine Image :",
+      "type": "photo"
+    }
+  ],
+  "voice Of Customer": [
+    {
+      "id": "customerFeedback",
+      "question": "What feedback did the customer provide?"
+    },
+    {
+      "id": "imagesRelatedToCustomerIssues",
+      "question": "Insert  images  related to the issues discussed with the customer:",
+      "type": "photo"
+    }
+  ]
+}
