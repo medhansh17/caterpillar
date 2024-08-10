@@ -6,10 +6,9 @@ import SpeechRecognition, {
 const inspectionSteps = [
   { id: "tire", question: "How is the condition of the tires?" },
   { id: "engine", question: "How is the condition of the engine?" },
-  // Add more inspection steps as needed
 ];
 
-const DEBOUNCE_TIME = 2000; // Increased to 2 seconds for better user experience
+const DEBOUNCE_TIME = 2000; 
 
 const InspectionForm = () => {
   const [responses, setResponses] = useState({});
