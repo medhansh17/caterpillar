@@ -10,7 +10,7 @@ const CameraModal = ({ isOpen, onClose, onCapture, stepId }) => {
     let stream = null;
     if (isOpen) {
       navigator.mediaDevices
-        .getUserMedia({ video: true })
+        .getUserMedia({ video: { facingMode: "environment" } })
         .then((videoStream) => {
           stream = videoStream;
           if (videoRef.current) {
