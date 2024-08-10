@@ -4,37 +4,98 @@ import SpeechRecognition, {
 } from "react-speech-recognition";
 import inspect_ques from "../../public/Data/inspection.json";
 
-const DEBOUNCE_TIME = 500;
+const DEBOUNCE_TIME = 100;
 
-const getGeoCoordinates = (callback) => {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        callback(`${latitude}, ${longitude}`);
-      },
-      (error) => {
-        console.error(error);
-        callback('Unable to retrieve location');
-      }
-    );
-  } else {
-    callback('Geolocation is not supported by this browser.');
-  }
+const getGeoCoordinates = () => {
+  return new Promise((resolve, reject) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          resolve(`${latitude}, ${longitude}`);
+        },
+        (error) => {
+          console.error(error);
+          reject('Unable to retrieve location');
+        }
+      );
+    } else {
+      reject('Geolocation is not supported by this browser.');
+    }
+  });
 };
 
-const generateSpecialInput = (id, callback) => {
+const generateSpecialInput = async (id) => {
   switch (id) {
     case "dateOfInspection":
       return new Date().toLocaleDateString();
     case "timeOfInspection":
       return new Date().toLocaleTimeString();
     case "geoCoordinates":
-      getGeoCoordinates(callback);
-      return null; // Return null as callback will handle updating state
+      try {
+        return await getGeoCoordinates();
+      } catch (error) {
+        return error.toString();
+      }
     default:
       return null;
   }
+};
+
+const SignatureCanvas = ({ onSave }) => {
+  const canvasRef = useRef(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+
+  const startDrawing = (e) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+    setIsDrawing(true);
+  };
+
+  const draw = (e) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+    ctx.stroke();
+  };
+
+  const endDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const saveSignature = () => {
+    const canvas = canvasRef.current;
+    const dataUrl = canvas.toDataURL();
+    onSave(dataUrl);
+  };
+
+  const clearSignature = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  return (
+    <div className="signature-canvas">
+      <canvas
+        ref={canvasRef}
+        width={300}
+        height={150}
+        onMouseDown={startDrawing}
+        onMouseMove={draw}
+        onMouseUp={endDrawing}
+        onMouseOut={endDrawing}
+        className="border border-gray-300"
+      />
+      <div className="mt-2">
+        <button onClick={saveSignature} className="bg-green-500 text-white px-4 py-2 rounded mr-2">Save</button>
+        <button onClick={clearSignature} className="bg-red-500 text-white px-4 py-2 rounded">Clear</button>
+      </div>
+    </div>
+  );
 };
 
 const InspectionForm = () => {
@@ -45,6 +106,7 @@ const InspectionForm = () => {
   const [isListening, setIsListening] = useState(false);
   const [expandedSections, setExpandedSections] = useState({});
   const questionRefs = useRef({});
+  const [showSignatureCanvas, setShowSignatureCanvas] = useState(false);
 
   const startInspection = useCallback(() => {
     resetTranscript();
@@ -65,8 +127,8 @@ const InspectionForm = () => {
 
   const handleSpeechRecognition = useCallback(() => {
     if (
-      transcript.toLowerCase().includes("okay next") ||
-      transcript.toLowerCase().includes("ok next")
+      transcript.toLowerCase().includes("nex") ||
+      transcript.toLowerCase().includes("next")
     ) {
       moveToNextStep();
     } else if (currentStepIndex !== -1) {
@@ -74,24 +136,17 @@ const InspectionForm = () => {
       const currentSection = sections[currentSectionIndex];
       if (currentSection && currentSection[currentStepIndex]) {
         const currentStep = currentSection[currentStepIndex];
-        if (generateSpecialInput(currentStep.id, (value) => {
-          setResponses((prevResponses) => ({
-            ...prevResponses,
-            [currentStep.id]: value,
-          }));
-        }) === null) {
-          setResponses((prevResponses) => ({
-            ...prevResponses,
-            [currentStep.id]: transcript,
-          }));
-        }
+        setResponses((prevResponses) => ({
+          ...prevResponses,
+          [currentStep.id]: transcript,
+        }));
       }
     }
   }, [transcript, currentStepIndex, currentSectionIndex]);
 
   const findNextNonSpecialStep = (section, startIndex) => {
     for (let i = startIndex; i < section.length; i++) {
-      if (generateSpecialInput(section[i].id, () => {}) === null) {
+      if (section[i].id !== "dateOfInspection" && section[i].id !== "timeOfInspection" && section[i].id !== "geoCoordinates" && section[i].id !== "inspectorSignature") {
         return i;
       }
     }
@@ -111,14 +166,7 @@ const InspectionForm = () => {
     if (nextStepIndex !== -1) {
       setCurrentStepIndex(nextStepIndex);
       const nextStep = currentSection[nextStepIndex];
-      if (generateSpecialInput(nextStep.id, (value) => {
-        setResponses((prevResponses) => ({
-          ...prevResponses,
-          [nextStep.id]: value,
-        }));
-      }) === null) {
-        speakQuestion(nextStep.question);
-      }
+      speakQuestion(nextStep.question);
     } else if (currentSectionIndex < sections.length - 1) {
       setCurrentSectionIndex((prevIndex) => prevIndex + 1);
       const nextSection = sections[currentSectionIndex + 1];
@@ -129,14 +177,7 @@ const InspectionForm = () => {
       setCurrentStepIndex(nextSectionFirstNonSpecialIndex);
       if (nextSectionFirstNonSpecialIndex !== -1) {
         const nextStep = nextSection[nextSectionFirstNonSpecialIndex];
-        if (generateSpecialInput(nextStep.id, (value) => {
-          setResponses((prevResponses) => ({
-            ...prevResponses,
-            [nextStep.id]: value,
-          }));
-        }) === null) {
-          speakQuestion(nextStep.question);
-        }
+        speakQuestion(nextStep.question);
       }
 
       // Automatically open the next section
@@ -175,6 +216,25 @@ const InspectionForm = () => {
     }
   }, [currentStepIndex, currentSectionIndex]);
 
+  useEffect(() => {
+    const updateSpecialInputs = async () => {
+      const sections = Object.values(inspect_ques);
+      for (const section of sections) {
+        for (const step of section) {
+          const specialInput = await generateSpecialInput(step.id);
+          if (specialInput !== null) {
+            setResponses((prevResponses) => ({
+              ...prevResponses,
+              [step.id]: specialInput,
+            }));
+          }
+        }
+      }
+    };
+
+    updateSpecialInputs();
+  }, []); // Run this effect only once when the component mounts
+
   const handleInputChange = (e, stepId) => {
     setResponses((prevResponses) => ({
       ...prevResponses,
@@ -187,6 +247,14 @@ const InspectionForm = () => {
       ...prev,
       [sectionKey]: !prev[sectionKey],
     }));
+  };
+
+  const handleSignatureSave = (dataUrl) => {
+    setResponses((prevResponses) => ({
+      ...prevResponses,
+      inspectorSignature: dataUrl,
+    }));
+    setShowSignatureCanvas(false);
   };
 
   return (
@@ -217,12 +285,8 @@ const InspectionForm = () => {
               {expandedSections[sectionKey] && (
                 <div className="p-4">
                   {sectionQuestions.map((step, index) => {
-                    const specialInput = generateSpecialInput(step.id, (value) => {
-                      setResponses((prevResponses) => ({
-                        ...prevResponses,
-                        [step.id]: value,
-                      }));
-                    });
+                    const isSpecialInput = step.id === "dateOfInspection" || step.id === "timeOfInspection" || step.id === "geoCoordinates";
+                    const isSignatureInput = step.id === "inspectorSignature";
                     return (
                       <div
                         key={step.id}
@@ -234,13 +298,32 @@ const InspectionForm = () => {
                         <h2 className="text-xl font-semibold mb-2">
                           {step.question}
                         </h2>
-                        {specialInput !== null ? (
+                        {isSpecialInput ? (
                           <input
                             type="text"
-                            value={specialInput}
+                            value={responses[step.id] || "Loading..."}
                             readOnly
                             className="w-full p-2 border border-gray-300 rounded text-lg bg-gray-100"
                           />
+                        ) : isSignatureInput ? (
+                          <div>
+                            {showSignatureCanvas ? (
+                              <SignatureCanvas onSave={handleSignatureSave} />
+                            ) : (
+                              <div>
+                                {responses[step.id] ? (
+                                  <img src={responses[step.id]} alt="Inspector Signature" className="max-w-full h-auto" />
+                                ) : (
+                                  <button
+                                    onClick={() => setShowSignatureCanvas(true)}
+                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                                  >
+                                    Open Signature Canvas
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <input
                             type="text"
@@ -253,7 +336,7 @@ const InspectionForm = () => {
                         {sectionIndex === currentSectionIndex &&
                           index === currentStepIndex &&
                           isListening &&
-                          specialInput === null && (
+                          !isSpecialInput && !isSignatureInput && (
                             <p className="text-sm text-gray-600 mt-2">
                               Listening...
                             </p>
