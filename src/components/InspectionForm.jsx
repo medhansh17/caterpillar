@@ -3,8 +3,9 @@ import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
 import inspect_ques from "../../public/Data/inspection.json";
-import CameraModal from "./CamerModal";
+import CameraModal from "./CameraModal";
 import { savePhoto, getAllPhotos } from "./indexedDB";
+import SignatureCanvas from "./SignatureCanvas";
 
 const DEBOUNCE_TIME = 100;
 
@@ -44,72 +45,6 @@ const generateSpecialInput = async (id) => {
   }
 };
 
-const SignatureCanvas = ({ onSave }) => {
-  const canvasRef = useRef(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-
-  const startDrawing = (e) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    ctx.beginPath();
-    ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    setIsDrawing(true);
-  };
-
-  const draw = (e) => {
-    if (!isDrawing) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-    ctx.stroke();
-  };
-
-  const endDrawing = () => {
-    setIsDrawing(false);
-  };
-
-  const saveSignature = () => {
-    const canvas = canvasRef.current;
-    const dataUrl = canvas.toDataURL();
-    onSave(dataUrl);
-  };
-
-  const clearSignature = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  };
-
-  return (
-    <div className="signature-canvas">
-      <canvas
-        ref={canvasRef}
-        width={300}
-        height={150}
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={endDrawing}
-        onMouseOut={endDrawing}
-        className="border border-gray-300"
-      />
-      <div className="mt-2">
-        <button
-          onClick={saveSignature}
-          className="bg-green-500 text-white px-4 py-2 rounded mr-2"
-        >
-          Save
-        </button>
-        <button
-          onClick={clearSignature}
-          className="bg-red-500 text-white px-4 py-2 rounded"
-        >
-          Clear
-        </button>
-      </div>
-    </div>
-  );
-};
-
 const InspectionForm = () => {
   const [responses, setResponses] = useState({});
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
@@ -121,9 +56,11 @@ const InspectionForm = () => {
   const [photos, setPhotos] = useState({});
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [currentPhotoStep, setCurrentPhotoStep] = useState(null);
+  const [showSignatureCanvas, setShowSignatureCanvas] = useState(false);
+  const [signatureData, setSignatureData] = useState(null);
+  const [images, setImages] = useState({});
 
   useEffect(() => {
-    // Load all photos from IndexedDB when the component mounts
     getAllPhotos().then((storedPhotos) => {
       const photoObject = storedPhotos.reduce((acc, photo) => {
         acc[photo.id] = photo.photoDataUrl;
@@ -143,7 +80,6 @@ const InspectionForm = () => {
     setPhotos((prev) => ({ ...prev, [currentPhotoStep]: photoDataUrl }));
     setCurrentPhotoStep(null);
   };
-  const [showSignatureCanvas, setShowSignatureCanvas] = useState(false);
 
   const startInspection = useCallback(() => {
     resetTranscript();
@@ -248,8 +184,6 @@ const InspectionForm = () => {
           speakQuestion(nextStep.question);
         }
       }
-
-      // Automatically open the next section
       const nextSectionKey = Object.keys(inspect_ques)[currentSectionIndex + 1];
       setExpandedSections((prev) => ({
         ...prev,
@@ -273,7 +207,6 @@ const InspectionForm = () => {
   }, [transcript, isListening, handleSpeechRecognition]);
 
   useEffect(() => {
-    // Scroll to the current question
     if (currentStepIndex !== -1 && currentSectionIndex !== -1) {
       const sections = Object.keys(inspect_ques);
       const currentSectionKey = sections[currentSectionIndex];
@@ -318,7 +251,8 @@ const InspectionForm = () => {
     }));
   };
 
-  const handleSignatureSave = (dataUrl) => {
+  const handleSaveSignature = (dataUrl) => {
+    setSignatureData(dataUrl);
     setResponses((prevResponses) => ({
       ...prevResponses,
       inspectorSignature: dataUrl,
@@ -386,6 +320,30 @@ const InspectionForm = () => {
                             readOnly
                             className="w-full p-2 border border-gray-300 rounded text-lg bg-gray-100"
                           />
+                        ) : isSignatureInput ? (
+                          <>
+                            {showSignatureCanvas && (
+                              <SignatureCanvas
+                                onSave={handleSaveSignature}
+                                onCancel={() => setShowSignatureCanvas(false)}
+                              />
+                            )}
+                            {!showSignatureCanvas && (
+                              <button
+                                onClick={() => setShowSignatureCanvas(true)}
+                                className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                              >
+                                Sign Here
+                              </button>
+                            )}
+                            {responses[step.id] && (
+                              <img
+                                src={responses[step.id]}
+                                alt="Signature"
+                                className="mt-2 max-w-full h-auto"
+                              />
+                            )}
+                          </>
                         ) : (
                           <>
                             <input
@@ -415,8 +373,7 @@ const InspectionForm = () => {
                         {sectionIndex === currentSectionIndex &&
                           index === currentStepIndex &&
                           isListening &&
-                          !isSpecialInput &&
-                          !isSignatureInput && (
+                          !isSpecialInput && (
                             <p className="text-sm text-gray-600 mt-2">
                               Listening...
                             </p>
