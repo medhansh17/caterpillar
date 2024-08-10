@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
-import inspect_ques from "../../public/Data/inspection.json";
+import inspect_ques from "../../public/Data/D6R2.json";
 import CameraModal from "./CameraModal";
 import { savePhoto, getAllPhotos } from "./indexedDB";
 import SignatureCanvas from "./SignatureCanvas";
