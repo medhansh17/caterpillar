@@ -1,4 +1,32 @@
+import React, { useState } from "react";
+import { signUp } from "../api/auth";
+
 export default function SignUp() {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [employeeID, setEmployeeID] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (password !== confirmPassword) {
+      alert("Passwords do not match.");
+      return;
+    }
+
+    try {
+      const response = await signUp(username, email, employeeID, password);
+      if (response.status === 201) {
+        alert("Sign up successful!");
+      }
+    } catch (error) {
+      console.error("Sign up error:", error);
+      alert("Sign up failed. Please try again.");
+    }
+  };
+
   return (
     <>
       <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
@@ -15,8 +43,7 @@ export default function SignUp() {
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <form
-            action="#"
-            method="POST"
+            onSubmit={handleSubmit}
             className="space-y-2"
             autoComplete="off"
           >
@@ -43,9 +70,12 @@ export default function SignUp() {
                   required
                   autoComplete="new-username"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
             </div>
+
             <div>
               <label
                 htmlFor="email"
@@ -61,6 +91,29 @@ export default function SignUp() {
                   required
                   autoComplete="email"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="employeeID"
+                className="block text-sm font-medium leading-6 text-gray-900"
+              >
+                Employee ID
+              </label>
+              <div className="mt-2">
+                <input
+                  id="employeeID"
+                  name="employeeID"
+                  type="text"
+                  required
+                  autoComplete="off"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  value={employeeID}
+                  onChange={(e) => setEmployeeID(e.target.value)}
                 />
               </div>
             </div>
@@ -80,6 +133,8 @@ export default function SignUp() {
                   required
                   autoComplete="new-password"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
             </div>
@@ -99,6 +154,8 @@ export default function SignUp() {
                   required
                   autoComplete="new-password"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                 />
               </div>
             </div>
