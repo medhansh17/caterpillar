@@ -3,6 +3,8 @@ import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
 import inspect_ques from "../../public/Data/inspection.json";
+import CameraModal from "./CamerModal";
+import { savePhoto, getAllPhotos } from "./indexedDB";
 
 const DEBOUNCE_TIME = 100;
 
@@ -16,11 +18,11 @@ const getGeoCoordinates = () => {
         },
         (error) => {
           console.error(error);
-          reject('Unable to retrieve location');
+          reject("Unable to retrieve location");
         }
       );
     } else {
-      reject('Geolocation is not supported by this browser.');
+      reject("Geolocation is not supported by this browser.");
     }
   });
 };
@@ -48,7 +50,7 @@ const SignatureCanvas = ({ onSave }) => {
 
   const startDrawing = (e) => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx.beginPath();
     ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     setIsDrawing(true);
@@ -57,7 +59,7 @@ const SignatureCanvas = ({ onSave }) => {
   const draw = (e) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     ctx.stroke();
   };
@@ -74,7 +76,7 @@ const SignatureCanvas = ({ onSave }) => {
 
   const clearSignature = () => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
@@ -91,8 +93,18 @@ const SignatureCanvas = ({ onSave }) => {
         className="border border-gray-300"
       />
       <div className="mt-2">
-        <button onClick={saveSignature} className="bg-green-500 text-white px-4 py-2 rounded mr-2">Save</button>
-        <button onClick={clearSignature} className="bg-red-500 text-white px-4 py-2 rounded">Clear</button>
+        <button
+          onClick={saveSignature}
+          className="bg-green-500 text-white px-4 py-2 rounded mr-2"
+        >
+          Save
+        </button>
+        <button
+          onClick={clearSignature}
+          className="bg-red-500 text-white px-4 py-2 rounded"
+        >
+          Clear
+        </button>
       </div>
     </div>
   );
@@ -106,6 +118,31 @@ const InspectionForm = () => {
   const [isListening, setIsListening] = useState(false);
   const [expandedSections, setExpandedSections] = useState({});
   const questionRefs = useRef({});
+  const [photos, setPhotos] = useState({});
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [currentPhotoStep, setCurrentPhotoStep] = useState(null);
+
+  useEffect(() => {
+    // Load all photos from IndexedDB when the component mounts
+    getAllPhotos().then((storedPhotos) => {
+      const photoObject = storedPhotos.reduce((acc, photo) => {
+        acc[photo.id] = photo.photoDataUrl;
+        return acc;
+      }, {});
+      setPhotos(photoObject);
+    });
+  }, []);
+
+  const handleClickPhoto = (stepId) => {
+    setCurrentPhotoStep(stepId);
+    setIsCameraOpen(true);
+  };
+
+  const handleCapturePhoto = async (photoDataUrl) => {
+    await savePhoto(currentPhotoStep, photoDataUrl);
+    setPhotos((prev) => ({ ...prev, [currentPhotoStep]: photoDataUrl }));
+    setCurrentPhotoStep(null);
+  };
   const [showSignatureCanvas, setShowSignatureCanvas] = useState(false);
 
   const startInspection = useCallback(() => {
@@ -136,17 +173,31 @@ const InspectionForm = () => {
       const currentSection = sections[currentSectionIndex];
       if (currentSection && currentSection[currentStepIndex]) {
         const currentStep = currentSection[currentStepIndex];
-        setResponses((prevResponses) => ({
-          ...prevResponses,
-          [currentStep.id]: transcript,
-        }));
+        if (
+          generateSpecialInput(currentStep.id, (value) => {
+            setResponses((prevResponses) => ({
+              ...prevResponses,
+              [currentStep.id]: value,
+            }));
+          }) === null
+        ) {
+          setResponses((prevResponses) => ({
+            ...prevResponses,
+            [currentStep.id]: transcript,
+          }));
+        }
       }
     }
   }, [transcript, currentStepIndex, currentSectionIndex]);
 
   const findNextNonSpecialStep = (section, startIndex) => {
     for (let i = startIndex; i < section.length; i++) {
-      if (section[i].id !== "dateOfInspection" && section[i].id !== "timeOfInspection" && section[i].id !== "geoCoordinates" && section[i].id !== "inspectorSignature") {
+      if (
+        section[i].id !== "dateOfInspection" &&
+        section[i].id !== "timeOfInspection" &&
+        section[i].id !== "geoCoordinates" &&
+        section[i].id !== "inspectorSignature"
+      ) {
         return i;
       }
     }
@@ -166,7 +217,16 @@ const InspectionForm = () => {
     if (nextStepIndex !== -1) {
       setCurrentStepIndex(nextStepIndex);
       const nextStep = currentSection[nextStepIndex];
-      speakQuestion(nextStep.question);
+      if (
+        generateSpecialInput(nextStep.id, (value) => {
+          setResponses((prevResponses) => ({
+            ...prevResponses,
+            [nextStep.id]: value,
+          }));
+        }) === null
+      ) {
+        speakQuestion(nextStep.question);
+      }
     } else if (currentSectionIndex < sections.length - 1) {
       setCurrentSectionIndex((prevIndex) => prevIndex + 1);
       const nextSection = sections[currentSectionIndex + 1];
@@ -177,7 +237,16 @@ const InspectionForm = () => {
       setCurrentStepIndex(nextSectionFirstNonSpecialIndex);
       if (nextSectionFirstNonSpecialIndex !== -1) {
         const nextStep = nextSection[nextSectionFirstNonSpecialIndex];
-        speakQuestion(nextStep.question);
+        if (
+          generateSpecialInput(nextStep.id, (value) => {
+            setResponses((prevResponses) => ({
+              ...prevResponses,
+              [nextStep.id]: value,
+            }));
+          }) === null
+        ) {
+          speakQuestion(nextStep.question);
+        }
       }
 
       // Automatically open the next section
@@ -285,7 +354,19 @@ const InspectionForm = () => {
               {expandedSections[sectionKey] && (
                 <div className="p-4">
                   {sectionQuestions.map((step, index) => {
-                    const isSpecialInput = step.id === "dateOfInspection" || step.id === "timeOfInspection" || step.id === "geoCoordinates";
+                    const specialInput = generateSpecialInput(
+                      step.id,
+                      (value) => {
+                        setResponses((prevResponses) => ({
+                          ...prevResponses,
+                          [step.id]: value,
+                        }));
+                      }
+                    );
+                    const isSpecialInput =
+                      step.id === "dateOfInspection" ||
+                      step.id === "timeOfInspection" ||
+                      step.id === "geoCoordinates";
                     const isSignatureInput = step.id === "inspectorSignature";
                     return (
                       <div
@@ -305,38 +386,37 @@ const InspectionForm = () => {
                             readOnly
                             className="w-full p-2 border border-gray-300 rounded text-lg bg-gray-100"
                           />
-                        ) : isSignatureInput ? (
-                          <div>
-                            {showSignatureCanvas ? (
-                              <SignatureCanvas onSave={handleSignatureSave} />
-                            ) : (
-                              <div>
-                                {responses[step.id] ? (
-                                  <img src={responses[step.id]} alt="Inspector Signature" className="max-w-full h-auto" />
-                                ) : (
-                                  <button
-                                    onClick={() => setShowSignatureCanvas(true)}
-                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                                  >
-                                    Open Signature Canvas
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
                         ) : (
-                          <input
-                            type="text"
-                            value={responses[step.id] || ""}
-                            onChange={(e) => handleInputChange(e, step.id)}
-                            placeholder="Waiting for response..."
-                            className="w-full p-2 border border-gray-300 rounded text-lg"
-                          />
+                          <>
+                            <input
+                              type="text"
+                              value={responses[step.id] || ""}
+                              onChange={(e) => handleInputChange(e, step.id)}
+                              placeholder="Waiting for response..."
+                              className="w-full p-2 border border-gray-300 rounded text-lg"
+                            />
+                            {step.type === "photo" && (
+                              <button
+                                onClick={() => handleClickPhoto(step.id)}
+                                className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                              >
+                                Click Photo
+                              </button>
+                            )}
+                            {photos[step.id] && (
+                              <img
+                                src={photos[step.id]}
+                                alt={`Photo for ${step.question}`}
+                                className="mt-2 max-w-full h-auto"
+                              />
+                            )}
+                          </>
                         )}
                         {sectionIndex === currentSectionIndex &&
                           index === currentStepIndex &&
                           isListening &&
-                          !isSpecialInput && !isSignatureInput && (
+                          !isSpecialInput &&
+                          !isSignatureInput && (
                             <p className="text-sm text-gray-600 mt-2">
                               Listening...
                             </p>
@@ -350,6 +430,12 @@ const InspectionForm = () => {
           )
         )}
       </div>
+      <CameraModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={handleCapturePhoto}
+        stepId={currentPhotoStep}
+      />
     </div>
   );
 };
