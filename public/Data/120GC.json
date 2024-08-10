@@ -1,0 +1,229 @@
+{
+    "header": [
+      {
+        "id": "SerialNumber",
+        "question": "What is the truck serial number?"
+      },
+      { "id": "truckModel", "question": "What is the  model id?" },
+      { "id": "inspectionId", "question": "What is the inspection ID?" },
+      { "id": "inspectorName", "question": "Who is the inspector?" },
+      {
+        "id": "inspectionEmployeeId",
+        "question": "What is the inspection employee ID?"
+      },
+      { "id": "dateOfInspection", "question": "What is the date of inspection?" },
+      { "id": "timeOfInspection", "question": "What is the time of inspection?" },
+      {
+        "id": "locationOfInspection",
+        "question": "Where is the location of the inspection?"
+      },
+      {
+        "id": "geoCoordinates",
+        "question": "What are the geo coordinates of the inspection?"
+      },
+      {
+        "id": "serviceMeterHours",
+        "question": "What are the service meter hours?"
+      },
+      {
+        "id": "inspectorSignature",
+        "question": "Insert inspector's signature?"
+      },
+      {
+        "id": "customerName",
+        "question": "What is the customer or company name?"
+      },
+      { "id": "catCustomerId", "question": "What is the CAT customer ID?" }
+    ],
+    "Tyres": [
+        {
+          "id": "tirePressureLeftFront",
+          "question": "What is the tire pressure for the left front?"
+        },
+        {
+          "id": "tirePressureRightFront",
+          "question": "What is the tire pressure for the right front?"
+        },
+        {
+          "id": "tireConditionLeftFront",
+          "question": "What is the tire condition for the left front?"
+        },
+        {
+          "id": "tireConditionRightFront",
+          "question": "What is the tire condition for the right front?"
+        },
+        {
+          "id": "tirePressureLeftMiddle",
+          "question": "What is the tire pressure for the left middle?"
+        },
+        {
+          "id": "tirePressureRightMiddle",
+          "question": "What is the tire pressure for the right middle?"
+        },
+        {
+          "id": "tireConditionLeftMiddle",
+          "question": "What is the tire condition for the left middle?"
+        },
+        {
+          "id": "tireConditionRightMiddle",
+          "question": "What is the tire condition for the right middle?"
+        },
+        {
+          "id": "tirePressureLeftRear",
+          "question": "What is the tire pressure for the left rear?"
+        },
+        {
+          "id": "tirePressureRightRear",
+          "question": "What is the tire pressure for the right rear?"
+        },
+        {
+          "id": "tireConditionLeftRear",
+          "question": "What is the tire condition for the left rear?"
+        },
+        {
+          "id": "tireConditionRightRear",
+          "question": "What is the tire condition for the right rear?"
+        },
+        {
+          "id": "overallTireSummary",
+          "question": "What is the overall tire summary?"
+        },
+        {
+          "id": "photoLeftFront",
+          "question": "Insert Left Front Tire Image:"
+        },
+        {
+          "id": "photoRightFront",
+          "question": "Insert Right Front Tire Image:"
+        },
+        {
+          "id": "photoLeftMiddle",
+          "question": "Insert Left Middle Tire Image:"
+        },
+        {
+          "id": "photoRightMiddle",
+          "question": "Insert Right Middle Tire Image:"
+        },
+        {
+          "id": "photoLeftRear",
+          "question": "Insert Left Rear Tire Image:"
+        },
+        {
+          "id": "photoRightRear",
+          "question": "Insert Right Rear Tire Image:"
+        }
+      ],
+    "battery": [
+      { "id": "batteryMake", "question": "What is the battery make?" },
+      {
+        "id": "batteryReplacementDate",
+        "question": "What is the battery replacement date?"
+      },
+      { "id": "batteryVoltage", "question": "What is the battery voltage?" },
+      {
+        "id": "batteryWaterLevel",
+        "question": "What is the battery water level?"
+      },
+      {
+        "id": "conditionOfBattery",
+        "question": "Is there any damage to the battery?"
+      },
+      {
+        "id": "leakOrRustInBattery",
+        "question": "Is there any leak or rust in the battery?"
+      },
+      {
+        "id": "batteryOverallSummary",
+        "question": "What is the battery overall summary?"
+      }
+      ,
+      {
+        "id": "photoBattery",
+        "question": "Insert Battery Image :"
+      }
+    ],
+    "exterior": [
+      {
+        "id": "rustDentDamageExterior",
+        "question": "Is there any rust, dent, or damage to the exterior?"
+      },
+      {
+        "id": "oilLeakInSuspension",
+        "question": "Is there an oil leak in the suspension?"
+      },
+      {
+        "id": "overallSummaryExterior",
+        "question": "What is the overall summary for the exterior?"
+      }
+      ,
+      {
+        "id": "photoExterior",
+        "question": "Insert Exterior Image :"
+      }
+    ],
+    "brakes": [
+      { "id": "brakeFluidLevel", "question": "What is the brake fluid level?" },
+      {
+        "id": "brakeConditionFront",
+        "question": "What is the brake condition for the front?"
+      },
+      {
+        "id": "brakeConditionRear",
+        "question": "What is the brake condition for the rear?"
+      },
+      {
+        "id": "emergencyBrake",
+        "question": "What is the condition of the emergency brake?"
+      },
+      {
+        "id": "brakeOverallSummary",
+        "question": "What is the overall brake summary?"
+      },
+      {
+        "id": "photoBrakes",
+        "question": "Insert Brakes Image :"
+      }
+    ],
+    "engine": [
+      {
+        "id": "rustDentsDamageEngine",
+        "question": "Is there any rust, dent, or damage to the engine?"
+      },
+      {
+        "id": "engineOilCondition",
+        "question": "What is the engine oil condition?"
+      },
+      { "id": "engineOilColor", "question": "What is the engine oil color?" },
+      {
+        "id": "brakeFluidCondition",
+        "question": "What is the brake fluid condition?"
+      },
+      { "id": "brakeFluidColor", "question": "What is the brake fluid color?" },
+      {
+        "id": "oilLeakInEngine",
+        "question": "Is there any oil leak in the engine?"
+      },
+      {
+        "id": "overallEngineSummary",
+        "question": "What is the overall engine summary?"
+      },
+      {
+        "id": "photoEngine",
+        "question": "Insert  Engine Image :"
+      }
+    ],
+    "voice Of Customer": [
+      {
+        "id": "customerFeedback",
+        "question": "What feedback did the customer provide?"
+      },
+      {
+        "id": "imagesRelatedToCustomerIssues",
+        "question": "Insert  images  related to the issues discussed with the customer:"
+      }
+    ]
+}
+  
+   
+  
+  
