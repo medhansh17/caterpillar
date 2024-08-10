@@ -6,6 +6,8 @@ import inspect_ques from "../../public/Data/inspection.json";
 import CameraModal from "./CameraModal";
 import { savePhoto, getAllPhotos } from "./indexedDB";
 import SignatureCanvas from "./SignatureCanvas";
+import InspectionPDF from "./InspectionPDF";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 
 const DEBOUNCE_TIME = 100;
 
@@ -57,6 +59,7 @@ const InspectionForm = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [currentPhotoStep, setCurrentPhotoStep] = useState(null);
   const [showSignatureCanvas, setShowSignatureCanvas] = useState(false);
+  const [images, setImages] = useState({});
 
   useEffect(() => {
     getAllPhotos().then((storedPhotos) => {
@@ -394,6 +397,15 @@ const InspectionForm = () => {
         onCapture={handleCapturePhoto}
         stepId={currentPhotoStep}
       />
+      <PDFDownloadLink
+        document={<InspectionPDF inspectionData={responses} images={images} />}
+        fileName="inspection_report.pdf"
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        {({ blob, url, loading, error }) =>
+          loading ? "Generating PDF..." : "Download PDF"
+        }
+      </PDFDownloadLink>
     </div>
   );
 };
