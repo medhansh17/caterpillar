@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import SpeechRecognition, {
-  useSpeechRecognition,
-} from "react-speech-recognition";
+import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 import inspect_ques from "../../public/Data/inspection.json";
 import CameraModal from "./CameraModal";
 import { savePhoto, getAllPhotos } from "./indexedDB";
@@ -57,8 +55,6 @@ const InspectionForm = () => {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [currentPhotoStep, setCurrentPhotoStep] = useState(null);
   const [showSignatureCanvas, setShowSignatureCanvas] = useState(false);
-  const [signatureData, setSignatureData] = useState(null);
-  const [images, setImages] = useState({});
 
   useEffect(() => {
     getAllPhotos().then((storedPhotos) => {
@@ -87,8 +83,7 @@ const InspectionForm = () => {
     setCurrentSectionIndex(0);
     setIsListening(true);
     SpeechRecognition.startListening({ continuous: true });
-    const firstQuestion =
-      Object.values(inspect_ques)[0]?.[0]?.question || "No questions available";
+    const firstQuestion = Object.values(inspect_ques)[0]?.[0]?.question || "No questions available";
     speakQuestion(firstQuestion);
     setExpandedSections({ [Object.keys(inspect_ques)[0]]: true });
   }, [resetTranscript]);
@@ -98,25 +93,21 @@ const InspectionForm = () => {
     speechSynthesis.speak(speech);
   };
 
-  const handleSpeechRecognition = useCallback(() => {
-    if (
-      transcript.toLowerCase().includes("nex") ||
-      transcript.toLowerCase().includes("next")
-    ) {
+  const handleSpeechRecognition = useCallback(async () => {
+    if (transcript.toLowerCase().includes("nex") || transcript.toLowerCase().includes("next")) {
       moveToNextStep();
     } else if (currentStepIndex !== -1) {
       const sections = Object.values(inspect_ques);
       const currentSection = sections[currentSectionIndex];
       if (currentSection && currentSection[currentStepIndex]) {
         const currentStep = currentSection[currentStepIndex];
-        if (
-          generateSpecialInput(currentStep.id, (value) => {
-            setResponses((prevResponses) => ({
-              ...prevResponses,
-              [currentStep.id]: value,
-            }));
-          }) === null
-        ) {
+        if (["dateOfInspection", "timeOfInspection", "geoCoordinates"].includes(currentStep.id)) {
+          const specialInput = await generateSpecialInput(currentStep.id);
+          setResponses((prevResponses) => ({
+            ...prevResponses,
+            [currentStep.id]: specialInput,
+          }));
+        } else {
           setResponses((prevResponses) => ({
             ...prevResponses,
             [currentStep.id]: transcript,
@@ -140,47 +131,39 @@ const InspectionForm = () => {
     return -1;
   };
 
-  const moveToNextStep = useCallback(() => {
+  const moveToNextStep = useCallback(async () => {
     resetTranscript();
     const sections = Object.values(inspect_ques);
     const currentSection = sections[currentSectionIndex];
 
-    const nextStepIndex = findNextNonSpecialStep(
-      currentSection,
-      currentStepIndex + 1
-    );
+    const nextStepIndex = findNextNonSpecialStep(currentSection, currentStepIndex + 1);
 
     if (nextStepIndex !== -1) {
       setCurrentStepIndex(nextStepIndex);
       const nextStep = currentSection[nextStepIndex];
-      if (
-        generateSpecialInput(nextStep.id, (value) => {
-          setResponses((prevResponses) => ({
-            ...prevResponses,
-            [nextStep.id]: value,
-          }));
-        }) === null
-      ) {
+      if (["dateOfInspection", "timeOfInspection", "geoCoordinates"].includes(nextStep.id)) {
+        const specialInput = await generateSpecialInput(nextStep.id);
+        setResponses((prevResponses) => ({
+          ...prevResponses,
+          [nextStep.id]: specialInput,
+        }));
+      } else {
         speakQuestion(nextStep.question);
       }
     } else if (currentSectionIndex < sections.length - 1) {
       setCurrentSectionIndex((prevIndex) => prevIndex + 1);
       const nextSection = sections[currentSectionIndex + 1];
-      const nextSectionFirstNonSpecialIndex = findNextNonSpecialStep(
-        nextSection,
-        0
-      );
+      const nextSectionFirstNonSpecialIndex = findNextNonSpecialStep(nextSection, 0);
       setCurrentStepIndex(nextSectionFirstNonSpecialIndex);
       if (nextSectionFirstNonSpecialIndex !== -1) {
         const nextStep = nextSection[nextSectionFirstNonSpecialIndex];
-        if (
-          generateSpecialInput(nextStep.id, (value) => {
-            setResponses((prevResponses) => ({
-              ...prevResponses,
-              [nextStep.id]: value,
-            }));
-          }) === null
-        ) {
+        if (["dateOfInspection", "timeOfInspection", "geoCoordinates"].includes(nextStep.id)) {
+          const specialInput = await generateSpecialInput(nextStep.id);
+          setResponses((prevResponses) => ({
+            ...prevResponses,
+            [nextStep.id]: specialInput,
+          }));
+        } else {
           speakQuestion(nextStep.question);
         }
       }
@@ -235,7 +218,7 @@ const InspectionForm = () => {
     };
 
     updateSpecialInputs();
-  }, []); // Run this effect only once when the component mounts
+  }, []);
 
   const handleInputChange = (e, stepId) => {
     setResponses((prevResponses) => ({
@@ -252,7 +235,6 @@ const InspectionForm = () => {
   };
 
   const handleSaveSignature = (dataUrl) => {
-    setSignatureData(dataUrl);
     setResponses((prevResponses) => ({
       ...prevResponses,
       inspectorSignature: dataUrl,
@@ -270,122 +252,108 @@ const InspectionForm = () => {
         Start Inspection
       </button>
       <div className="space-y-6">
-        {Object.entries(inspect_ques).map(
-          ([sectionKey, sectionQuestions], sectionIndex) => (
-            <div
-              key={sectionKey}
-              className="my-6 border border-gray-200 rounded-lg bg-slate-100"
+        {Object.entries(inspect_ques).map(([sectionKey, sectionQuestions], sectionIndex) => (
+          <div
+            key={sectionKey}
+            className="my-6 border border-gray-200 rounded-lg bg-slate-100"
+          >
+            <button
+              onClick={() => toggleSection(sectionKey)}
+              className="w-full flex justify-between items-center p-4 bg-gray-200 hover:bg-gray-300 transition-colors duration-200"
             >
-              <button
-                onClick={() => toggleSection(sectionKey)}
-                className="w-full flex justify-between items-center p-4 bg-gray-200 hover:bg-gray-300 transition-colors duration-200"
-              >
-                <h1 className="text-2xl font-bold">
-                  {sectionKey.toUpperCase()}
-                </h1>
-                {expandedSections[sectionKey] ? <UpIcon /> : <DownIcon />}
-              </button>
-              {expandedSections[sectionKey] && (
-                <div className="p-4">
-                  {sectionQuestions.map((step, index) => {
-                    const specialInput = generateSpecialInput(
-                      step.id,
-                      (value) => {
-                        setResponses((prevResponses) => ({
-                          ...prevResponses,
-                          [step.id]: value,
-                        }));
+              <h1 className="text-2xl font-bold">
+                {sectionKey.toUpperCase()}
+              </h1>
+              {expandedSections[sectionKey] ? <UpIcon /> : <DownIcon />}
+            </button>
+            {expandedSections[sectionKey] && (
+              <div className="p-4">
+                {sectionQuestions.map((step, index) => {
+                  const isSpecialInput = ["dateOfInspection", "timeOfInspection", "geoCoordinates"].includes(step.id);
+                  const isSignatureInput = step.id === "inspectorSignature";
+                  return (
+                    <div
+                      key={step.id}
+                      ref={(el) =>
+                        (questionRefs.current[`${sectionKey}-${index}`] = el)
                       }
-                    );
-                    const isSpecialInput =
-                      step.id === "dateOfInspection" ||
-                      step.id === "timeOfInspection" ||
-                      step.id === "geoCoordinates";
-                    const isSignatureInput = step.id === "inspectorSignature";
-                    return (
-                      <div
-                        key={step.id}
-                        ref={(el) =>
-                          (questionRefs.current[`${sectionKey}-${index}`] = el)
-                        }
-                        className="bg-white p-4 rounded-lg mb-4 shadow"
-                      >
-                        <h2 className="text-xl font-semibold mb-2">
-                          {step.question}
-                        </h2>
-                        {isSpecialInput ? (
+                      className="bg-white p-4 rounded-lg mb-4 shadow"
+                    >
+                      <h2 className="text-xl font-semibold mb-2">
+                        {step.question}
+                      </h2>
+                      {isSpecialInput ? (
+                        <input
+                          type="text"
+                          value={responses[step.id] || "Loading..."}
+                          readOnly
+                          className="w-full p-2 border border-gray-300 rounded text-lg bg-gray-100"
+                        />
+                      ) : isSignatureInput ? (
+                        <>
+                          {showSignatureCanvas && (
+                            <SignatureCanvas
+                              onSave={handleSaveSignature}
+                              onCancel={() => setShowSignatureCanvas(false)}
+                            />
+                          )}
+                          {!showSignatureCanvas && (
+                            <button
+                              onClick={() => setShowSignatureCanvas(true)}
+                              className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            >
+                              Sign Here
+                            </button>
+                          )}
+                          {responses[step.id] && (
+                            <img
+                              src={responses[step.id]}
+                              alt="Signature"
+                              className="mt-2 max-w-full h-auto"
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <>
                           <input
                             type="text"
-                            value={responses[step.id] || "Loading..."}
-                            readOnly
-                            className="w-full p-2 border border-gray-300 rounded text-lg bg-gray-100"
+                            value={responses[step.id] || ""}
+                            onChange={(e) => handleInputChange(e, step.id)}
+                            placeholder="Waiting for response..."
+                            className="w-full p-2 border border-gray-300 rounded text-lg"
                           />
-                        ) : isSignatureInput ? (
-                          <>
-                            {showSignatureCanvas && (
-                              <SignatureCanvas
-                                onSave={handleSaveSignature}
-                                onCancel={() => setShowSignatureCanvas(false)}
-                              />
-                            )}
-                            {!showSignatureCanvas && (
-                              <button
-                                onClick={() => setShowSignatureCanvas(true)}
-                                className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                              >
-                                Sign Here
-                              </button>
-                            )}
-                            {responses[step.id] && (
-                              <img
-                                src={responses[step.id]}
-                                alt="Signature"
-                                className="mt-2 max-w-full h-auto"
-                              />
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <input
-                              type="text"
-                              value={responses[step.id] || ""}
-                              onChange={(e) => handleInputChange(e, step.id)}
-                              placeholder="Waiting for response..."
-                              className="w-full p-2 border border-gray-300 rounded text-lg"
-                            />
-                            {step.type === "photo" && (
-                              <button
-                                onClick={() => handleClickPhoto(step.id)}
-                                className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                              >
-                                Click Photo
-                              </button>
-                            )}
-                            {photos[step.id] && (
-                              <img
-                                src={photos[step.id]}
-                                alt={`Photo for ${step.question}`}
-                                className="mt-2 max-w-full h-auto"
-                              />
-                            )}
-                          </>
-                        )}
-                        {sectionIndex === currentSectionIndex &&
-                          index === currentStepIndex &&
-                          isListening &&
-                          !isSpecialInput && (
-                            <p className="text-sm text-gray-600 mt-2">
-                              Listening...
-                            </p>
+                          {step.type === "photo" && (
+                            <button
+                              onClick={() => handleClickPhoto(step.id)}
+                              className="mt-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            >
+                              Click Photo
+                            </button>
                           )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        )}
+                          {photos[step.id] && (
+                            <img
+                              src={photos[step.id]}
+                              alt={`Photo for ${step.question}`}
+                              className="mt-2 max-w-full h-auto"
+                            />
+                          )}
+                        </>
+                      )}
+                      {sectionIndex === currentSectionIndex &&
+                        index === currentStepIndex &&
+                        isListening &&
+                        !isSpecialInput && (
+                          <p className="text-sm text-gray-600 mt-2">
+                            Listening...
+                          </p>
+                        )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
       <CameraModal
         isOpen={isCameraOpen}
