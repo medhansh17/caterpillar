@@ -4,12 +4,14 @@ import LogIn from "./components/logIn";
 import SignUp from "./components/signUp";
 import PrivateRoutes from "./components/protectedRoutes";
 import Inspect from "./components/inspection";
+import Landing from "./components/landing";
 
 export default function App() {
   return (
     <>
       <Routes>
         <Route element={<PrivateRoutes />}>
+          <Route path="/" element={<Landing />} />
           <Route path="/inspectForm" element={<InspectionForm />} />
           <Route path="/inspection" element={<Inspect />} />
         </Route>

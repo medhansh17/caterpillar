@@ -1,5 +1,73 @@
 {
+  "header": [
+    {
+      "id": "SerialNumber",
+      "question": "What is the truck serial number?"
+    },
+    { "id": "truckModel", "question": "What is the  model id?" },
+    { "id": "inspectionId", "question": "What is the inspection ID?" },
+    { "id": "inspectorName", "question": "Who is the inspector?" },
+    {
+      "id": "inspectionEmployeeId",
+      "question": "What is the inspection employee ID?"
+    },
+    { "id": "dateOfInspection", "question": "What is the date of inspection?" },
+    { "id": "timeOfInspection", "question": "What is the time of inspection?" },
+    {
+      "id": "locationOfInspection",
+      "question": "Where is the location of the inspection?"
+    },
+    {
+      "id": "geoCoordinates",
+      "question": "What are the geo coordinates of the inspection?"
+    },
+    {
+      "id": "serviceMeterHours",
+      "question": "What are the service meter hours?"
+    },
+    {
+      "id": "inspectorSignature",
+      "question": "Insert inspector's signature?"
+    },
+    {
+      "id": "customerName",
+      "question": "What is the customer or company name?"
+    },
+    { "id": "catCustomerId", "question": "What is the CAT customer ID?" }
+  ],
   "tires": [
+    {
+      "id": "tirePressureLeftFront",
+      "question": "What is the tire pressure for the left front?"
+    },
+    {
+      "id": "tirePressureRightFront",
+      "question": "What is the tire pressure for the right front?"
+    },
+    {
+      "id": "tireConditionLeftFront",
+      "question": "What is the tire condition for the left front?"
+    },
+    {
+      "id": "tireConditionRightFront",
+      "question": "What is the tire condition for the right front?"
+    },
+    {
+      "id": "tirePressureLeftRear",
+      "question": "What is the tire pressure for the left rear?"
+    },
+    {
+      "id": "tirePressureRightRear",
+      "question": "What is the tire pressure for the right rear?"
+    },
+    {
+      "id": "tireConditionLeftRear",
+      "question": "What is the tire condition for the left rear?"
+    },
+    {
+      "id": "tireConditionRightRear",
+      "question": "What is the tire condition for the right rear?"
+    },
     {
       "id": "overallTireSummary",
       "question": "What is the overall tire summary?"
@@ -20,7 +88,7 @@
       "type": "photo"
     },
     {
-      "id": "photoLeftRear",
+      "id": "photoLeftRer",
       "question": "Insert LeftRear Tyre Image :",
       "type": "photo"
     }

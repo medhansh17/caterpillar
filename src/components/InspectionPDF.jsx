@@ -1,129 +1,101 @@
-import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import React from "react";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  Image,
+  StyleSheet,
+} from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: {
-    flexDirection: 'column',
-    backgroundColor: '#E4E4E4',
-    padding: 30,
+    padding: 40,
+  },
+  header: {
+    fontSize: 24,
+    marginBottom: 20,
+    textAlign: "center",
+    color: "#333",
+    fontWeight: "bold",
   },
   section: {
-    margin: 10,
-    padding: 10,
-    flexGrow: 1,
-  },
-  title: {
-    fontSize: 24,
-    textAlign: 'center',
     marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ccc",
+    paddingBottom: 10,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 15,
     marginBottom: 10,
+    color: "#2c3e50",
+    fontWeight: "bold",
   },
-  fieldTitle: {
+  questionGroup: {
+    marginBottom: 15,
+  },
+  question: {
     fontSize: 12,
-    fontWeight: 'bold',
     marginBottom: 5,
+    color: "#34495e",
+    fontWeight: "bold",
   },
-  fieldValue: {
-    fontSize: 10,
-    marginBottom: 10,
+  response: {
+    fontSize: 11,
+    marginBottom: 5,
+    marginLeft: 10,
+    color: "#555",
   },
   image: {
-    marginVertical: 15,
-    marginHorizontal: 'auto',
-    maxWidth: '80%',
-    maxHeight: 200,
+    width: 100, // Reduced width
+    height: 100, // Reduced height
+    marginBottom: 10,
+    marginLeft: 10,
+    objectFit: "contain",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 30,
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    color: "#7f8c8d",
+    fontSize: 10,
+  },
+  pageNumber: {
+    position: "absolute",
+    bottom: 30,
+    right: 40,
+    fontSize: 10,
+    color: "#7f8c8d",
+  },
+  photo: {
+    marginVertical: 10,
+    width: 100, // Reduced width for photos
+    height: 100, // Reduced height for photos
+    objectFit: "contain",
   },
 });
 
-const InspectionPDF = ({ inspectionData, images }) => (
+const InspectionPDF = ({ inspectionData }) => (
   <Document>
-    <Page size="A4" style={styles.page}>
-      <View style={styles.section}>
-        <Text style={styles.title}>Inspection Report</Text>
-
-        {/* Header Section */}
-        <Text style={styles.sectionTitle}>General Information</Text>
-        {['truckSerialNumber', 'truckModel', 'inspectionId', 'inspectorName', 'inspectionEmployeeId', 'dateOfInspection', 'timeOfInspection', 'locationOfInspection', 'geoCoordinates', 'serviceMeterHours', 'customerName', 'catCustomerId'].map((field) => (
-          <View key={field}>
-            <Text style={styles.fieldTitle}>{field}:</Text>
-            <Text style={styles.fieldValue}>{inspectionData[field] || 'N/A'}</Text>
-          </View>
-        ))}
-
-        {/* Tires Section */}
-        <Text style={styles.sectionTitle}>Tires</Text>
-        {['tirePressureLeftFront', 'tirePressureRightFront', 'tireConditionLeftFront', 'tireConditionRightFront', 'tirePressureLeftRear', 'tirePressureRightRear', 'tireConditionLeftRear', 'tireConditionRightRear', 'overallTireSummary'].map((field) => (
-          <View key={field}>
-            <Text style={styles.fieldTitle}>{field}:</Text>
-            <Text style={styles.fieldValue}>{inspectionData[field] || 'N/A'}</Text>
-          </View>
-        ))}
-        {images['tirePressureLeftFront'] && <Image src={images['tirePressureLeftFront']} style={styles.image} />}
-        {images['tirePressureRightFront'] && <Image src={images['tirePressureRightFront']} style={styles.image} />}
-        {images['tirePressureLeftRear'] && <Image src={images['tirePressureLeftRear']} style={styles.image} />}
-        {images['tirePressureRightRear'] && <Image src={images['tirePressureRightRear']} style={styles.image} />}
-
-        {/* Battery Section */}
-        <Text style={styles.sectionTitle}>Battery</Text>
-        {['batteryMake', 'batteryReplacementDate', 'batteryVoltage', 'batteryWaterLevel', 'conditionOfBattery', 'leakOrRustInBattery', 'batteryOverallSummary'].map((field) => (
-          <View key={field}>
-            <Text style={styles.fieldTitle}>{field}:</Text>
-            <Text style={styles.fieldValue}>{inspectionData[field] || 'N/A'}</Text>
-          </View>
-        ))}
-        {images['batteryCondition'] && <Image src={images['batteryCondition']} style={styles.image} />}
-
-        {/* Exterior Section */}
-        <Text style={styles.sectionTitle}>Exterior</Text>
-        {['rustDentDamageExterior', 'oilLeakInSuspension', 'overallSummaryExterior'].map((field) => (
-          <View key={field}>
-            <Text style={styles.fieldTitle}>{field}:</Text>
-            <Text style={styles.fieldValue}>{inspectionData[field] || 'N/A'}</Text>
-          </View>
-        ))}
-        {images['exteriorDamage'] && <Image src={images['exteriorDamage']} style={styles.image} />}
-
-        {/* Brakes Section */}
-        <Text style={styles.sectionTitle}>Brakes</Text>
-        {['brakeFluidLevel', 'brakeConditionFront', 'brakeConditionRear', 'emergencyBrake', 'brakeOverallSummary'].map((field) => (
-          <View key={field}>
-            <Text style={styles.fieldTitle}>{field}:</Text>
-            <Text style={styles.fieldValue}>{inspectionData[field] || 'N/A'}</Text>
-          </View>
-        ))}
-        {images['brakeCondition'] && <Image src={images['brakeCondition']} style={styles.image} />}
-
-        {/* Engine Section */}
-        <Text style={styles.sectionTitle}>Engine</Text>
-        {['rustDentsDamageEngine', 'engineOilCondition', 'engineOilColor', 'brakeFluidCondition', 'brakeFluidColor', 'oilLeakInEngine', 'overallEngineSummary'].map((field) => (
-          <View key={field}>
-            <Text style={styles.fieldTitle}>{field}:</Text>
-            <Text style={styles.fieldValue}>{inspectionData[field] || 'N/A'}</Text>
-          </View>
-        ))}
-        {images['engineCondition'] && <Image src={images['engineCondition']} style={styles.image} />}
-
-        {/* Voice of Customer Section */}
-        <Text style={styles.sectionTitle}>Voice of Customer</Text>
-        {['customerFeedback'].map((field) => (
-          <View key={field}>
-            <Text style={styles.fieldTitle}>{field}:</Text>
-            <Text style={styles.fieldValue}>{inspectionData[field] || 'N/A'}</Text>
-          </View>
-        ))}
-        {images['customerIssues'] && <Image src={images['customerIssues']} style={styles.image} />}
-
-        {/* Inspector Signature */}
-        <Text style={styles.sectionTitle}>Inspector Signature</Text>
-        {inspectionData.inspectorSignature && (
-          <Image src={inspectionData.inspectorSignature} style={styles.image} />
-        )}
-      </View>
+    <Page style={styles.page}>
+      {Object.entries(inspectionData).map(([sectionKey, sectionData]) => (
+        <View key={sectionKey} style={styles.section}>
+          <Text style={styles.sectionTitle}>{sectionKey}</Text>
+          {sectionData.map((item) => (
+            <View key={item.id} style={styles.questionGroup}>
+              <Text style={styles.question}>{item.question || item.id}</Text>
+              {item.id === "inspectorSignature" && item.response ? (
+                <Image src={item.response} style={styles.image} />
+              ) : (
+                <Text style={styles.response}>{item.response}</Text>
+              )}
+              {item.photo && <Image src={item.photo} style={styles.photo} />}
+            </View>
+          ))}
+        </View>
+      ))}
     </Page>
   </Document>
 );

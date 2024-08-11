@@ -2,12 +2,11 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
-// import inspectQues from "../Data/D6R2.json";
 import CameraModal from "./CameraModal";
 import { savePhoto, getAllPhotos } from "./indexedDB";
 import SignatureCanvas from "./SignatureCanvas";
-import InspectionPDF from "./InspectionPDF";
 import { PDFDownloadLink } from "@react-pdf/renderer";
+import InspectionPDF from "./InspectionPDF";
 import { useLocation } from "react-router-dom";
 import R2900 from "../Data/R2900.json";
 import D6R2 from "../Data/D6R2.json";
@@ -79,6 +78,105 @@ const InspectionForm = () => {
   const [inspectQues, setInspectQues] = useState({});
   const [attachPictures, setAttachPictures] = useState(false);
   const [isAskingForPictures, setIsAskingForPictures] = useState(false);
+  const [formattedData, setFormattedData] = useState({});
+  const [pdfData, setPdfData] = useState(null);
+
+  const preparePDFData = useCallback(() => {
+    const savedData = localStorage.getItem("inspectionData");
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      const dataWithPhotos = {};
+
+      Object.entries(parsedData).forEach(([sectionKey, sectionData]) => {
+        dataWithPhotos[sectionKey] = sectionData.map((item) => {
+          const photoKey = `photo_${item.id}`;
+          const photo = localStorage.getItem(photoKey);
+          return { ...item, photo };
+        });
+      });
+
+      setPdfData(dataWithPhotos);
+    }
+  }, []);
+
+  
+  useEffect(() => {
+    preparePDFData();
+  }, [preparePDFData]);
+
+  const formatData = useCallback(() => {
+    const formatted = {};
+    Object.entries(inspectQues).forEach(([sectionKey, sectionQuestions]) => {
+      formatted[sectionKey.toLowerCase()] = sectionQuestions.map(
+        (question) => ({
+          id: question.id,
+          response: responses[question.id] || "",
+          photo: photos[question.id] || null,
+        })
+      );
+    });
+    return formatted;
+  }, [inspectQues, responses, photos]);
+
+  const saveDataLocally = useCallback(() => {
+    const data = formatData();
+
+    // Save non-image data
+    const dataWithoutImages = Object.fromEntries(
+      Object.entries(data).map(([key, value]) => [
+        key,
+        value.map(({ photo, ...rest }) => rest),
+      ])
+    );
+    localStorage.setItem("inspectionData", JSON.stringify(dataWithoutImages));
+
+    // Save images separately
+    Object.entries(data).forEach(([sectionKey, sectionData]) => {
+      sectionData.forEach((item) => {
+        if (item.photo) {
+          localStorage.setItem(`photo_${item.id}`, item.photo);
+        }
+      });
+    });
+
+    setFormattedData(data);
+  }, [formatData]);
+  const loadSavedData = useCallback(() => {
+    const savedData = localStorage.getItem("inspectionData");
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+
+      // Load responses
+      const loadedResponses = {};
+      Object.values(parsedData)
+        .flat()
+        .forEach((item) => {
+          loadedResponses[item.id] = item.response;
+        });
+      setResponses(loadedResponses);
+
+      // Load photos
+      const loadedPhotos = {};
+      Object.values(parsedData)
+        .flat()
+        .forEach((item) => {
+          const savedPhoto = localStorage.getItem(`photo_${item.id}`);
+          if (savedPhoto) {
+            loadedPhotos[item.id] = savedPhoto;
+          }
+        });
+      setPhotos(loadedPhotos);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSavedData();
+  }, [loadSavedData]);
+
+  useEffect(() => {
+    const intervalId = setInterval(saveDataLocally, 1000);
+    return () => clearInterval(intervalId);
+  }, [saveDataLocally, photos]);
 
   useEffect(() => {
     if (modelToJsonMap[modelNo]) {
@@ -97,9 +195,11 @@ const InspectionForm = () => {
   };
 
   const handleCapturePhoto = async (photoDataUrl) => {
-    await savePhoto(currentPhotoStep, photoDataUrl);
+    const photoKey = `photo_${currentPhotoStep}`;
+    localStorage.setItem(photoKey, photoDataUrl);
     setPhotos((prev) => ({ ...prev, [currentPhotoStep]: photoDataUrl }));
     setCurrentPhotoStep(null);
+    setIsCameraOpen(false);
   };
 
   const startInspection = useCallback(() => {
@@ -285,8 +385,6 @@ const InspectionForm = () => {
     inspectQues,
   ]);
 
-  
-
   useEffect(() => {
     if (isListening && transcript) {
       const timer = setTimeout(() => {
@@ -334,7 +432,6 @@ const InspectionForm = () => {
       [stepId]: e.target.value,
     }));
   };
-
   const toggleSection = (sectionKey) => {
     setExpandedSections((prev) => ({
       ...prev,
@@ -487,15 +584,17 @@ const InspectionForm = () => {
         onCapture={handleCapturePhoto}
         stepId={currentPhotoStep}
       />
-      <PDFDownloadLink
-        document={<InspectionPDF inspectionData={responses} images={images} />}
-        fileName="inspection_report.pdf"
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      >
-        {({ blob, url, loading, error }) =>
-          loading ? "Generating PDF..." : "Download PDF"
-        }
-      </PDFDownloadLink>
+      {pdfData && Object.keys(pdfData).length > 0 && (
+        <PDFDownloadLink
+          document={<InspectionPDF inspectionData={pdfData} />}
+          fileName="inspection_report.pdf"
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          {({ blob, url, loading, error }) =>
+            loading ? "Generating PDF..." : "Download PDF"
+          }
+        </PDFDownloadLink>
+      )}
     </div>
   );
 };
