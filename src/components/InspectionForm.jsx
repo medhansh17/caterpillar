@@ -99,7 +99,6 @@ const InspectionForm = () => {
     }
   }, []);
 
-  
   useEffect(() => {
     preparePDFData();
   }, [preparePDFData]);
@@ -273,9 +272,13 @@ const InspectionForm = () => {
       if (currentSection && currentSection[currentStepIndex]) {
         const currentStep = currentSection[currentStepIndex];
         if (
-          ["dateOfInspection", "timeOfInspection", "geoCoordinates"].includes(
-            currentStep.id
-          )
+          [
+            "dateOfInspection",
+            "timeOfInspection",
+            "geoCoordinates",
+            "truckModel",
+            "SerialNumber",
+          ].includes(currentStep.id)
         ) {
           const specialInput = await generateSpecialInput(currentStep.id);
           setResponses((prevResponses) => ({
@@ -460,7 +463,7 @@ const InspectionForm = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 ">
       <h1 className="text-3xl font-bold mb-6">Vehicle Inspection Form</h1>
       <button
         onClick={startInspection}
@@ -473,7 +476,7 @@ const InspectionForm = () => {
           ([sectionKey, sectionQuestions], sectionIndex) => (
             <div
               key={sectionKey}
-              className="my-6 border border-gray-200 rounded-lg bg-slate-100"
+              className="mt-6 border border-gray-200 rounded-lg bg-slate-100"
             >
               <button
                 onClick={() => toggleSection(sectionKey)}
@@ -491,6 +494,8 @@ const InspectionForm = () => {
                       "dateOfInspection",
                       "timeOfInspection",
                       "geoCoordinates",
+                      "truckModel",
+                      "SerialNumber",
                     ].includes(step.id);
                     const isSignatureInput = step.id === "inspectorSignature";
                     return (
@@ -507,7 +512,13 @@ const InspectionForm = () => {
                         {isSpecialInput ? (
                           <input
                             type="text"
-                            value={responses[step.id] || "Loading..."}
+                            value={
+                              step.id === "SerialNumber"
+                                ? serialNo
+                                : step.id === "truckModel"
+                                ? modelNo
+                                : responses[step.id] || "Loading..."
+                            }
                             readOnly
                             className="w-full p-2 border border-gray-300 rounded text-lg bg-gray-100"
                           />
@@ -584,17 +595,19 @@ const InspectionForm = () => {
         onCapture={handleCapturePhoto}
         stepId={currentPhotoStep}
       />
-      {pdfData && Object.keys(pdfData).length > 0 && (
-        <PDFDownloadLink
-          document={<InspectionPDF inspectionData={pdfData} />}
-          fileName="inspection_report.pdf"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          {({ blob, url, loading, error }) =>
-            loading ? "Generating PDF..." : "Download PDF"
-          }
-        </PDFDownloadLink>
-      )}
+      <div className="mt-6 w-fit">
+        {pdfData && Object.keys(pdfData).length > 0 && (
+          <PDFDownloadLink
+            document={<InspectionPDF inspectionData={pdfData} />}
+            fileName="inspection_report.pdf"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            {({ blob, url, loading, error }) =>
+              loading ? "Generating PDF..." : "Download PDF"
+            }
+          </PDFDownloadLink>
+        )}
+      </div>
     </div>
   );
 };

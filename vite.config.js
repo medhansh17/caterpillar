@@ -13,8 +13,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
       manifest: {
-        name: "Vite PWA Project",
-        short_name: "Vite PWA Project",
+        name: "CAT App",
+        short_name: "CAT App",
         theme_color: "#ffffff",
         icons: [
           {
