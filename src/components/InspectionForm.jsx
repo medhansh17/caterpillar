@@ -34,6 +34,14 @@ const getGeoCoordinates = () => {
   });
 };
 
+const clearLocalStorageExcept = (keysToKeep) => {
+  Object.keys(localStorage).forEach((key) => {
+    if (!keysToKeep.includes(key)) {
+      localStorage.removeItem(key);
+    }
+  });
+};
+
 const generateSpecialInput = async (id) => {
   switch (id) {
     case "dateOfInspection":
@@ -80,6 +88,19 @@ const InspectionForm = () => {
   const [isAskingForPictures, setIsAskingForPictures] = useState(false);
   const [formattedData, setFormattedData] = useState({});
   const [pdfData, setPdfData] = useState(null);
+  const [downloadTriggered, setDownloadTriggered] = useState(false);
+
+  const handleDownload = () => {
+    setDownloadTriggered(true);
+  };
+  useEffect(() => {
+    if (downloadTriggered) {
+      clearLocalStorageExcept(["user", "token"]);
+      setResponses({});
+      setPhotos({});
+      setDownloadTriggered(false);
+    }
+  }, [downloadTriggered]);
 
   const preparePDFData = useCallback(() => {
     const savedData = localStorage.getItem("inspectionData");
@@ -601,6 +622,7 @@ const InspectionForm = () => {
             document={<InspectionPDF inspectionData={pdfData} />}
             fileName="inspection_report.pdf"
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={handleDownload}
           >
             {({ blob, url, loading, error }) =>
               loading ? "Generating PDF..." : "Download PDF"
