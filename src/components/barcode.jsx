@@ -87,7 +87,7 @@ const ImageBarcodeScanner = () => {
 
       <div className="mt-6 w-full max-w-sm">
         <label className="block text-sm font-medium text-gray-700">
-          Serial Number
+          Serial Number (for testing : 7301234)
         </label>
         <input
           type="text"
@@ -97,7 +97,7 @@ const ImageBarcodeScanner = () => {
           placeholder="Type manually if barcode is not available"
         />
         <label className="block text-sm font-medium text-gray-700">
-          Model ID
+          Model ID (for testing : R2900)
         </label>
         <input
           type="text"
